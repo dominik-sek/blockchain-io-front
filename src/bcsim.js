@@ -98,7 +98,7 @@ class Block{
         this.previousHash = previousHash; 
         this.nonce = 0; 
         this.hash = this.calculateHash(); 
-        this.transactions = [transactions];
+        this.transactions = [];
         }
 
     calculateHash(){
@@ -131,13 +131,12 @@ constructor(){
         return new Block(
             "SYSTEM",
             this.getDate(),
-            [
-                {
+            {
+                    id:"0x0",
                     from: "SYSTEM",
                     to: "0x0",
                     amount: 0
-                }
-            ],
+            },
             "0"
         );
     }
@@ -204,6 +203,7 @@ constructor(){
                 miner.wallet.addToWallet(this.pendingTransactionFees); // need to check the validity of this, idk if this miner should be rewarded or if the fees work as intended
                 
                 this.pendingTransactions.push({
+                    id: SHA256(miner.address+this.miningReward).toString().substring(0,10),
                     from: "SYSTEM",
                     to: miner.address,
                     amount: this.miningReward
@@ -228,7 +228,11 @@ constructor(){
             }
             
             let amount = _.random(1, (miner.wallet.getBalance())*0.75)
+            if(amount < 0){
+                amount = 0;
+            }
             sample.push({
+                id: SHA256(miner.address+miner2.address+amount).toString().substring(0,10),
                 from: miner.address,
                 to: miner2.address,
                 amount: amount
