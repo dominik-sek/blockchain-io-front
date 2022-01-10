@@ -159,7 +159,6 @@ function App() {
     if(!minerList.includes(miner)){
       return;
     }
-
     var date = new Date(Date.now());
     function getDate() {
       return date.getDate()
@@ -199,11 +198,11 @@ function App() {
   }
 
   function startMining() {
-    debugger;
     if(minerList.length === 0){
       openError();
       return;
     }
+    debugger;
     for (var i = 0; i < minerList.length; i++) {
       intervals.push({
         key:[minerList[i].address],
@@ -238,8 +237,8 @@ function App() {
   const simulationTable ={
     6: 1000,
     5: 10000,
-    4: 100000,
-    3: 1000000, //default value
+    4: 100000, //default value
+    3: 1000000, 
     2: 10000000,
     1: 100000000,
     0: 1000000000
@@ -267,10 +266,10 @@ function App() {
   }
 
   function restartSim(){
-    setSimulationSpeed(simulationTable[3]);
+    setSimulationSpeed(simulationTable[6]);
     setRecentlyRestarted(true)
     openInfo();
-    ClearAllIntervals()
+    ClearAllIntervals();
     blockchain = null;
     setHistoricalMiners([]);
     blockchain = new Blockchain();
@@ -522,7 +521,7 @@ function App() {
                 return(
                 <div key={miner.id}>
                 <hr/>
-                <h1 style={{color:'green'}}>ADDITION</h1>
+                <h3 style={{color:'green'}}>ADDITION</h3>
                 <p>Miner id: {miner.id}</p>
                     <p>Name: {miner.name}</p>
                     <p>Power: {miner.power} MH/s</p>
@@ -533,12 +532,12 @@ function App() {
               }else{
                 return(
                 <div key={miner.id}>
-                <h1 style={{color:'red'}}>DELETION</h1>
-                <h2 style={{color:'red'}}>Time of deletion: {deletionTimestamp}</h2>
+                <h3 style={{color:'red'}}>DELETION</h3>
+                <h3 style={{color:'red'}}>Time of deletion: {deletionTimestamp}</h3>
                 <p>Miner id: {miner.id}</p>
                     <p>Name: {miner.name}</p>
                     <p>Power: {miner.power} MH/s</p>
-                    <p>Current Block: {miner.currHeader}</p>
+                    <p>Last block: {miner.currHeader}</p>
                     <p>Public Address: {miner.address}</p>
                     <p>Balance at time of deletion: {miner.wallet.balance}</p>
                 </div>
@@ -555,7 +554,7 @@ function App() {
         <h2>Mining Reward: <InputNumber min={1} max={100} step={1} defaultValue={blockchain.miningReward} onChange={onChangeReward} /></h2>
         <h2>Current tax: <InputNumber min={0.01} max={1.00} step={0.01} defaultValue={blockchain.tax} onChange={onChangeTax} /></h2>
 
-        <h2>Simulation speed:</h2><Slider min={0} max={6} marks={marks} defaultValue={3} onChange={handleSliderChange}/>
+        <h2>Simulation speed:</h2><Slider min={0} max={6} marks={marks} defaultValue={6} onChange={handleSliderChange}/>
         {/* e=>setSimSpeedSlider(e.target.value) */}
         </div>
 
