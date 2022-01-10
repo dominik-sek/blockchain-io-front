@@ -5,7 +5,7 @@ import { BlockVisual } from './components/BlockVisual';
 import React, { useEffect, useState, useRef } from 'react';
 import { Swiper, SwiperSlide } from "swiper/react";
 import Collapsible from 'react-collapsible';
-import {Slider, notification, Modal, InputNumber, Space } from 'antd';
+import {Slider, notification, Modal, InputNumber, Space, Drawer } from 'antd';
 import {EditOutlined,ExclamationCircleTwoTone,CheckCircleTwoTone} from '@ant-design/icons';
 
 
@@ -172,7 +172,7 @@ function App() {
     
 
     if (miner.wallet.getBalance() > 0) {
-      miner.wallet.removeFromWallet((miner.power / blockchain.miningReward) * 0.1);
+      miner.wallet.removeFromWallet( (miner.power / blockchain.miningReward) * 0.01);
       blockchain.addBlock(newBlock, miner, mesh);
       setBlocks({ ...blocks, ...blockchain.chain });
 
@@ -212,15 +212,20 @@ function App() {
     for (var i = 1; i < 99999; i++)
       window.clearInterval(i);
   }
-
   function onChangeDiff(value) {
-    setDiff(value);
+
+      setDiff(value);
+    
   }
   function onChangeReward(value) {
-    setReward(value);
+
+      setReward(value);
+    
   }
   function onChangeTax(value) {
-    setTax(value);
+
+      setTax(value);
+    
   }
 
   function handleSliderChange(value){
@@ -242,6 +247,16 @@ function App() {
     console.log(simulationSpeed);
     blockchain = new Blockchain();
     setBlocks({});
+    if(diff === 0){
+      blockchain.difficulty = 2;
+    }
+    if(tax === 0){
+      blockchain.tax = 0.12;
+    }
+    if(reward === 0){
+      blockchain.miningReward = 15;
+    }
+
     blockchain.difficulty=diff;
     blockchain.tax=tax;
     blockchain.reward=reward;
@@ -263,7 +278,7 @@ function App() {
   }
 
   function insertMiner(id, name, power){
-    if(id ===0){
+    if(id === 0){
       id = minerList.length + 1;
     }
     if(name === ""){
@@ -325,9 +340,6 @@ function App() {
         <Button onClick={() => { openSettings() }}>SETTINGS</Button>
         <Button onClick={() => { openHistory() }}>HISTORY</Button>
         <Button onClick={() => { openMiners() }}>ADD MINERS</Button>
-
-
-
       </SidebarContainer>
       
       <Content
@@ -480,9 +492,10 @@ function App() {
           </Transactions>
 
           <CurrentBlock>
+            <h2>blockchain difficulty: {blockchain.difficulty}</h2>
             <h1>Last Block mined:</h1>
             <BlockVisual block={blockchain.getLastBlock()} number={i} />
-            <h2>difficulty: {blockchain.difficulty}</h2>
+            
           </CurrentBlock>
 
 
@@ -577,7 +590,7 @@ mesh.addToMesh(miner);
 }
 const SidebarContainer = styled.div`
   height: 100vh;
-  width: 10%;
+  width: 12%;
   padding:20px;
   border-right: 1px solid black;
   display: flex;
@@ -587,7 +600,7 @@ const SidebarContainer = styled.div`
 const Content = styled.div`
   width:100%;
   height:100vh;
-  background-color: gray;
+  background-color: #f0f2f5;
   flex:1;
   overflow-x:hidden;
 `
@@ -603,17 +616,17 @@ const Info = styled.div`
   justify-content: space-around;
   padding:20px;
 
-
    `
 
 const Miners = styled.div`
   flex:0.2;
-  border-radius:20px;
   padding:20px;
-  backdrop-filter: blur(25px) saturate(177%);
-    -webkit-backdrop-filter: blur(25px) saturate(177%);
-    background-color: rgba(15, 15, 18, 0.66);
-    border: 1px solid rgba(255, 255, 255, 0.125)
+  background: rgba( 142, 140, 140, 0.6 );
+box-shadow: 0 8px 32px 0 rgba( 31, 38, 135, 0.37 );
+backdrop-filter: blur( 11.5px );
+-webkit-backdrop-filter: blur( 11.5px );
+border-radius:20px;
+border: 1px solid rgba( 255, 255, 255, 0.18 );
   
   `
 
@@ -622,13 +635,14 @@ const CurrentBlock = styled.div`
   padding:20px;
   display:flex;
   border:1px solid black;
-  border-radius:20px;
   flex-direction:column;
   justify-content: center;
-  backdrop-filter: blur(25px) saturate(177%);
-    -webkit-backdrop-filter: blur(25px) saturate(177%);
-    background-color: rgba(15, 15, 18, 0.66);
-    border: 1px solid rgba(255, 255, 255, 0.125)
+  background: rgba( 142, 140, 140, 0.6 );
+box-shadow: 0 8px 32px 0 rgba( 31, 38, 135, 0.37 );
+backdrop-filter: blur( 11.5px );
+-webkit-backdrop-filter: blur( 11.5px );
+border-radius:20px;
+border: 1px solid rgba( 255, 255, 255, 0.18 );
   `
 
 const Transactions = styled.div`
@@ -637,12 +651,13 @@ const Transactions = styled.div`
   flex-direction:row;
   flex:0.4;
   border:1px solid black;
-  border-radius:20px;
   padding:20px;
-  backdrop-filter: blur(25px) saturate(177%);
-    -webkit-backdrop-filter: blur(25px) saturate(177%);
-    background-color: rgba(15, 15, 18, 0.66);
-    border: 1px solid rgba(255, 255, 255, 0.125)
+  background: rgba( 142, 140, 140, 0.6 );
+box-shadow: 0 8px 32px 0 rgba( 31, 38, 135, 0.37 );
+backdrop-filter: blur( 11.5px );
+-webkit-backdrop-filter: blur( 11.5px );
+border-radius:20px;
+border: 1px solid rgba( 255, 255, 255, 0.18 );
 
 `
 export default App;
