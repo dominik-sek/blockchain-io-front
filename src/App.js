@@ -54,7 +54,9 @@ function App() {
   const [deletionTimestamp, setDeletionTimestamp] = useState("");
   const [addMiners, setAddMinersVisible] = useState(false);
   const [showConfirmation, setShowConfirmation] = useState(false);
-  const [simulationSpeed, setSimulationSpeed] = useState(1000000);
+  const [simulationSpeed, setSimulationSpeed] = useState(1000);
+
+  const [recentlyRestarted, setRecentlyRestarted] = useState(false);
 
   const [simSpeedSlider, setSimSpeedSlider] = useState(3);
 
@@ -197,6 +199,7 @@ function App() {
   }
 
   function startMining() {
+    debugger;
     if(minerList.length === 0){
       openError();
       return;
@@ -265,6 +268,7 @@ function App() {
 
   function restartSim(){
     setSimulationSpeed(simulationTable[3]);
+    setRecentlyRestarted(true)
     openInfo();
     ClearAllIntervals()
     blockchain = null;
@@ -288,9 +292,16 @@ function App() {
       power = 100;
     }
 
+
     setAddButtonVisible(true);
     let newMiner = new Miner(id, name, power);
+    setHistoricalMiners(historicalMiners => [...historicalMiners, newMiner]);
+
     minerList.push(newMiner);
+
+    mesh.addToMesh(newMiner);
+
+
     setMiners({...miners, ...minerList});
     setInput([]);
     openMiners();
