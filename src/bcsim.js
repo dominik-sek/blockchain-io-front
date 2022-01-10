@@ -12,6 +12,9 @@ class Wallet{
     getBalance(){
         return this.balance;
     }
+    getAddress(){
+        return this.walletAddress;
+    }
     addToWallet(amount){
         this.balance += amount;
     }
@@ -23,6 +26,7 @@ class Wallet{
         let hash = SHA256(stringAddress).toString().substring(0,17);
         return "1x0"+hash;
     }
+
 }
 
 class Mesh{
@@ -116,6 +120,7 @@ class Block{
 }
 
 let date = new Date(Date.now());
+
 class Blockchain {
 
 constructor(){
@@ -124,7 +129,6 @@ constructor(){
         this.miningReward = 15; // 15 reward seems balanced
         this.pendingTransactions = [];
         this.pendingTransactionFees = 0;
-        
     }
 
     createGenesisBlock(){
@@ -135,7 +139,8 @@ constructor(){
                     id:"0x0",
                     from: "SYSTEM",
                     to: "0x0",
-                    amount: 0
+                    amount: 0,
+                    fees: 0
             },
             "0"
         );
@@ -162,6 +167,9 @@ constructor(){
     }
 
     getDate(){
+        if(date !== new Date(Date.now())){
+            date = new Date(Date.now());
+        }
         return date.getDate() 
         + "/" + date.getMonth()+1 
         + "/" + date.getFullYear() 
@@ -206,7 +214,8 @@ constructor(){
                     id: SHA256(miner.address+this.miningReward).toString().substring(0,10),
                     from: "SYSTEM",
                     to: miner.address,
-                    amount: this.miningReward
+                    amount: this.miningReward,
+                    feeColected: this.pendingTransactionFees //  fees for all the transactions go to the miner
                 });
             }
         }
@@ -217,6 +226,7 @@ constructor(){
         let miner = "";
         let miner2 = "";
         let sample = [];
+        let tax = 0.12;
         
         while(sample.length < 4){
             miner = _.sample(meshNetwork.peerList);
@@ -227,7 +237,7 @@ constructor(){
                 miner2 = _.sample(meshNetwork.peerList);
             }
             
-            let amount = _.random(1, (miner.wallet.getBalance())*0.75)
+            let amount = _.random(1, (miner.wallet.getBalance())*0.50)
             if(amount < 0){
                 amount = 0;
             }
@@ -235,12 +245,13 @@ constructor(){
                 id: SHA256(miner.address+miner2.address+amount).toString().substring(0,10),
                 from: miner.address,
                 to: miner2.address,
-                amount: amount
+                amount: amount,
+                fee: amount*tax // fee for one transaction
             })
 
-            miner.wallet.removeFromWallet(amount);
+            miner.wallet.removeFromWallet(amount + (amount*tax));
             miner2.wallet.addToWallet(amount);
-            this.pendingTransactionFees += amount*0.50;
+            this.pendingTransactionFees += (amount*tax);
         }
         return sample;
     }
