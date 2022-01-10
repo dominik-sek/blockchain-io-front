@@ -5,8 +5,8 @@ import { BlockVisual } from './components/BlockVisual';
 import React, { useEffect, useState, useRef } from 'react';
 import { Swiper, SwiperSlide } from "swiper/react";
 import Collapsible from 'react-collapsible';
-import {Select, notification, Modal } from 'antd';
-
+import {Slider, notification, Modal, InputNumber, Space } from 'antd';
+import {EditOutlined,ExclamationCircleTwoTone,CheckCircleTwoTone} from '@ant-design/icons';
 
 
 
@@ -49,10 +49,30 @@ function App() {
   const [miners, setMiners] = useState([]);
   const [latestDeleted, setlatestDeleted] = useState({});
   const [isModalVisible, setIsModalVisible] = useState(false);
+  const [areSettingsVisible, setAreSettingsVisible] = useState(false);
   const [historicalMiners, setHistoricalMiners] = useState([]);
   const [deletionTimestamp, setDeletionTimestamp] = useState("");
-  const [blockchainReset, setBlockchainReset] = useState(false);
+  const [addMiners, setAddMinersVisible] = useState(false);
+  const [showConfirmation, setShowConfirmation] = useState(false);
+  const [simulationSpeed, setSimulationSpeed] = useState(1000000);
 
+  const [simSpeedSlider, setSimSpeedSlider] = useState(3);
+
+
+
+  //used for blockchain settings
+  const [diff, setDiff] = useState(0);
+  const [reward,setReward] = useState(0);
+  const [tax, setTax] = useState(0);
+  //adding a new miner
+  const [id, setId] = useState(0);
+  const [name,setName] = useState("");
+  const [power, setPower] = useState(0);
+
+  const [addButtonVisible, setAddButtonVisible] = useState(true);
+  
+
+  const [input, setInput] = useState([]);
 
   const [, updateState] = React.useState();
   const forceUpdate = React.useCallback(() => updateState({}), [])
@@ -61,13 +81,35 @@ function App() {
   const openHistory = () => {
       setIsModalVisible(true);
     };
-  const handleOk = () => {
-      setIsModalVisible(false);
-  };
-  const handleCancel = () => {
+  const handleOkCancel = () => {
       setIsModalVisible(false);
   };
 
+
+  const openSettings = () => {
+    setAreSettingsVisible(true);
+  };
+  const settingsOkCancel = () => {
+    setShowConfirmation(true);
+    setAreSettingsVisible(false);
+  };
+  const settingsCancel = () =>{
+    setAreSettingsVisible(false);
+  }
+  const confirmationCancel = () => {
+    setShowConfirmation(false);
+  };
+
+  const openMiners = () => {
+    setAddMinersVisible(true);
+  };
+  const minersOk = (minerList) => {
+    setAddMinersVisible(false);
+  };
+  const minersCancel = () => {
+    setInput([]);
+    setAddMinersVisible(false);
+  };
   let intervals = [];
 
   const firstUpdate = useRef(true);
@@ -89,6 +131,13 @@ function App() {
     });
   
 };
+  const openInfo = () => {
+    notification['info']({
+      message: 'Blockchain reset',
+      description: 'Your blockchain has been reset, please add miners again',
+    });
+
+  };
 
 
 
@@ -101,6 +150,7 @@ function App() {
       });
     
   };
+
 
 
   function mineBlock(miner) {
@@ -126,23 +176,18 @@ function App() {
       blockchain.addBlock(newBlock, miner, mesh);
       setBlocks({ ...blocks, ...blockchain.chain });
 
-      // console.log(blockchain.chain);
     } else{
-      console.log(miner.id + " has no money!");
       setlatestDeleted(miner);
-      // setlatestDeletedBalance(miner.wallet.getBalance());
-      // setlatestDeletedHead(miner.currHeader);
       setDeletionTimestamp(getDate());
       setHistoricalMiners(historicalMiners => [...historicalMiners, miner]);
-
       mesh.removePeer(miner);
-      //render a notification that the miner has been removed
       minerList = _.reject(minerList, function(el) { return el.address === miner.address; }); // delete from the list
       setMiners({...miners, ...minerList});
 
       intervals.forEach(interval => {
         if(interval.key === miner.address){
           clearInterval(interval.value);  // clear the interval - without this it bugged out the notification
+          //turns out this is not needed, but im too afraid to remove it
         }
       });
       return;
@@ -159,7 +204,7 @@ function App() {
     for (var i = 0; i < minerList.length; i++) {
       intervals.push({
         key:[minerList[i].address],
-        value: setInterval(mineBlock, (blockchain.difficulty / minerList[i].power) * 100000, minerList[i])
+        value: setInterval(mineBlock, (blockchain.difficulty / minerList[i].power) * simulationSpeed, minerList[i])
       });
     }
   }
@@ -168,11 +213,47 @@ function App() {
       window.clearInterval(i);
   }
 
+  function onChangeDiff(value) {
+    setDiff(value);
+  }
+  function onChangeReward(value) {
+    setReward(value);
+  }
+  function onChangeTax(value) {
+    setTax(value);
+  }
+
+  function handleSliderChange(value){
+    setSimSpeedSlider(value);
+  }
+  
+  const simulationTable ={
+    6: 1000,
+    5: 10000,
+    4: 100000,
+    3: 1000000, //default value
+    2: 10000000,
+    1: 100000000,
+    0: 1000000000
+  }
+
+  function changeBlockchain() {
+    setSimulationSpeed(simulationTable[simSpeedSlider]);
+    console.log(simulationSpeed);
+    blockchain = new Blockchain();
+    setBlocks({});
+    blockchain.difficulty=diff;
+    blockchain.tax=tax;
+    blockchain.reward=reward;
+    setShowConfirmation(false)
+  }
+
   function restartSim(){
-    
+    setSimulationSpeed(simulationTable[3]);
+    openInfo();
     ClearAllIntervals()
     blockchain = null;
-    debugger;
+    setHistoricalMiners([]);
     blockchain = new Blockchain();
     mesh = null;
     mesh = new Mesh("mesh");
@@ -180,9 +261,59 @@ function App() {
     minerList = [];
 
   }
-  console.log(blockchain.chain);
 
-  
+  function insertMiner(id, name, power){
+    if(id ===0){
+      id = minerList.length + 1;
+    }
+    if(name === ""){
+      name = "Miner " + id;
+    }
+    if(power === 0){
+      power = 100;
+    }
+
+    setAddButtonVisible(true);
+    let newMiner = new Miner(id, name, power);
+    minerList.push(newMiner);
+    setMiners({...miners, ...minerList});
+    setInput([]);
+    openMiners();
+  }
+
+  function addInput() {
+    setAddButtonVisible(false);
+
+    setInput(input.concat(
+    <Collapsible transitionTime={100} trigger={"Miner"} open={true}>
+      <Space>
+        <Input style={{width:200}} disabled={true} min={1} max={999} defaultValue={minerList.length+1} placeholder='id' onChange={e=>setId(e.target.value)} />
+        <Input style={{width:200}}  placeholder="name" onChange={e=>setName(e.target.value)} />
+        <Input style={{width:200}} min={50} max={999} defaultValue={100} placeholder="power" onChange={e=>setPower(e.target.value) } />
+
+        <Button type="primary" onClick={()=>insertMiner(id,name,power)}>Add</Button>
+      </Space>
+    </Collapsible>
+      ) )
+
+  }
+
+
+
+  const marks = {
+    0: 'ultra-slow',
+    1: 'very-slow',
+    2: 'slow',
+    3: 'normal',
+    4: 'fast',
+    5: 'very-fast',
+    6: {
+      style: {
+        color: '#f50',
+      },
+      label: <strong>ultra-fast</strong>,
+    }
+  };
 
   let i = 0;
   return (
@@ -190,17 +321,19 @@ function App() {
       <SidebarContainer>
         <Button onClick={() => { startMining() }}>START</Button>
         <Button onClick={() => { ClearAllIntervals() }}>STOP</Button>
-        <Button onClick={() => { restartSim() }}>RESTART</Button>
-        <Button onClick={() => { openNotification() }}>SETTINGS</Button>
+        <Button onClick={() => { restartSim() }}>CLEAR</Button>
+        <Button onClick={() => { openSettings() }}>SETTINGS</Button>
         <Button onClick={() => { openHistory() }}>HISTORY</Button>
+        <Button onClick={() => { openMiners() }}>ADD MINERS</Button>
+
+
 
       </SidebarContainer>
       
       <Content
       key={new Date()}>
         <Swiper
-          
-          slidesPerView={4}
+          slidesPerView={3}
           spaceBetween={30}
           pagination={{
             clickable: true
@@ -211,7 +344,6 @@ function App() {
             blockchain.chain.map(
             block => {
               i++;
-              console.log(blockchain.chain);
               return <SwiperSlide><BlockVisual  block={block} number={i} /></SwiperSlide>
             }
           )}
@@ -219,7 +351,7 @@ function App() {
 
         <Info>
           <Miners>
-            <h3>Miners:</h3>
+            <h3>Miners: <EditOutlined onclick={{openMiners}} /></h3> 
             {minerList.map(miner => {
                 return(
                     <React.Fragment key={miner.id}>
@@ -227,7 +359,8 @@ function App() {
                     key={miner.id}
                     trigger={
                     <>
-                    {miner.address} 
+                    {miner.address+"\n"}
+                    B:{miner.wallet.balance}
                     <div style={{display:'flex', width:'100%', justifyContent:'flex-end'}}>
                     <ArrowDownOutlined />
                     </div>
@@ -288,10 +421,10 @@ function App() {
 
                     open={false}>
                     
-                    <p>From:{transaction.from}</p>
-                    <p>To:{transaction.to}</p>
-                    <p>Amount:{transaction.amount}</p>
-                    <p style={{color:'red'}}>Fee:{transaction.fee}</p>
+                    <p>From: {transaction.from}</p>
+                    <p>To: {transaction.to}</p>
+                    <p>Amount: {transaction.amount}</p>
+                    <p style={{color:'red'}}>Fee: {transaction.fee}</p>
                     </Collapsible>
                   </React.Fragment>
                   );
@@ -349,6 +482,7 @@ function App() {
           <CurrentBlock>
             <h1>Last Block mined:</h1>
             <BlockVisual block={blockchain.getLastBlock()} number={i} />
+            <h2>difficulty: {blockchain.difficulty}</h2>
           </CurrentBlock>
 
 
@@ -357,7 +491,7 @@ function App() {
 
       </Content>
 
-      <Modal title={"Network History"} width={750} visible={isModalVisible} onOk={handleOk} onCancel={handleCancel} cancelButtonProps={{ style: { display: 'none' } }}>
+      <Modal title={"Network History"} width={750} visible={isModalVisible} onOk={handleOkCancel} onCancel={handleOkCancel} cancelButtonProps={{ style: { display: 'none' } }}>
           {historicalMiners.map(
             miner => {
               if(minerList.includes(miner)){
@@ -390,6 +524,52 @@ function App() {
             })}
       </Modal>
 
+      <Modal title={"Blockchain Settings"} width={750} visible={areSettingsVisible} onOk={settingsOkCancel} onCancel={settingsCancel} cancelButtonProps={{ style: { display: 'none' } }}>
+        
+        <div style={{display:'flex', flexDirection:'column'}}>
+        <h2>Mining difficulty: <InputNumber min={1} max={10.00} step={1} defaultValue={blockchain.difficulty} onChange={onChangeDiff} /></h2>
+        <h2>Mining Reward: <InputNumber min={1} max={100} step={1} defaultValue={blockchain.miningReward} onChange={onChangeReward} /></h2>
+        <h2>Current tax: <InputNumber min={0.01} max={1.00} step={0.01} defaultValue={blockchain.tax} onChange={onChangeTax} /></h2>
+
+        <h2>Simulation speed:</h2><Slider min={0} max={6} marks={marks} defaultValue={3} onChange={handleSliderChange}/>
+        {/* e=>setSimSpeedSlider(e.target.value) */}
+        </div>
+
+      </Modal>
+      <Modal title={"Blockchain reset"} width={750} visible={showConfirmation} onOk={changeBlockchain} onCancel={confirmationCancel} cancelButtonProps={{ style: { display: 'none' } }}>
+        
+        <div style={{display:'flex', flexDirection:'column'}}>
+        <h2><ExclamationCircleTwoTone twoToneColor={'red'} /> This requires a blockchain reset, are you sure you want to continue? </h2>
+        </div>
+        </Modal>
+
+      <Modal title={"Add Miners"} width={750} visible={addMiners} onOk={minersOk} onCancel={minersCancel}>
+        
+        <div style={{display:'flex', flexDirection:'column'}}>
+        <h2>Add a new miner:</h2>
+        {input}
+        <Button style={addButtonVisible ? {display:''} : {display: 'none'}} onClick={addInput} >Add Miner</Button>
+        
+        
+
+{/* minerList.push(
+new Miner(1, "Adam", 50),
+new Miner(2, "Norman", 50),
+new Miner(3, "Jack", 200),
+new Miner(4, "Lewis", 300),
+new Miner(5, "Adrian", 450),
+)
+
+minerList.forEach(miner => {
+mesh.addToMesh(miner);
+}) */}
+
+
+          
+        </div>
+
+      </Modal>
+
     </div>
   );
 
@@ -415,7 +595,8 @@ const Content = styled.div`
 const Info = styled.div`
   width: 100%;
   display:flex;
-  height:60vh;
+  height:auto;
+  min-heigh:60vh;
   flex-direction: row;
   shadow: 0 0 10px black;
   flex:1;

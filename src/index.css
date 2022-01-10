@@ -14,7 +14,6 @@ code {
     monospace;
 }
 .swiper-slide{
-  width:fit-content !important;
   margin-top: 10px;
 }
 .Collapsible__trigger{

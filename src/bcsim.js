@@ -67,12 +67,7 @@ class Mesh{
         }
     }
 
-    printPeerList(){
-        console.log("Peer List: ");
-        for(var i = 0; i < this.peerList.length; i++){
-            console.log(this.peerList[i].id);
-        }
-    }
+
 
 
 }
@@ -121,6 +116,7 @@ class Block{
 
 let date = new Date(Date.now());
 
+
 class Blockchain {
 
 constructor(){
@@ -129,6 +125,7 @@ constructor(){
         this.miningReward = 15; // 15 reward seems balanced
         this.pendingTransactions = [];
         this.pendingTransactionFees = 0;
+        this.tax = 0.12;
     }
 
     createGenesisBlock(){
@@ -165,6 +162,7 @@ constructor(){
 
         ));
     }
+
 
     getDate(){
         if(date !== new Date(Date.now())){
@@ -221,12 +219,17 @@ constructor(){
         }
         this.pendingTransactionFees = 0;
     }
+    setTax(number){
+        this.tax = number;
+    }
+    getTax(){
+        return this.tax;
+    }
     
     generateTransactions(meshNetwork){
         let miner = "";
         let miner2 = "";
         let sample = [];
-        let tax = 0.12;
         
         while(sample.length < 4){
             miner = _.sample(meshNetwork.peerList);
@@ -246,12 +249,12 @@ constructor(){
                 from: miner.address,
                 to: miner2.address,
                 amount: amount,
-                fee: amount*tax // fee for one transaction
+                fee: amount*this.tax // fee for one transaction
             })
 
-            miner.wallet.removeFromWallet(amount + (amount*tax));
+            miner.wallet.removeFromWallet(amount + (amount*this.tax));
             miner2.wallet.addToWallet(amount);
-            this.pendingTransactionFees += (amount*tax);
+            this.pendingTransactionFees += (amount*this.tax);
         }
         return sample;
     }
